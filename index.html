@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Missões - Produtividade Gamificada</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --primary: 59 130 246;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .title-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .mission-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .mission-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .nav-link {
+            transition: all 0.2s;
+        }
+        
+        .nav-link.active {
+            border-bottom: 3px solid rgb(59 130 246);
+            color: white;
+        }
+
+        .xp-bar {
+            transition: width 0.6s ease-in-out;
+        }
+
+        .streak-flame {
+            animation: flame 2s infinite alternate;
+        }
+
+        @keyframes flame {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+
+        .calendar-day {
+            transition: all 0.2s;
+        }
+        
+        .calendar-day:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div class="w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col">
+            <div class="p-6 border-b border-zinc-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl">M</div>
+                    <div>
+                        <span class="title-font text-3xl font-semibold tracking-tighter">Missões</span>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-1">
+                <a href="#" onclick="navigateTo('dashboard')" class="nav-link active flex items-center gap-3 px-4 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800 hover:text-white" id="nav-dashboard">
+                    <i class="fa-solid fa-house w-5"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" onclick="navigateTo('missions')" class="nav-link flex items-center gap-3 px-4 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800 hover:text-white" id="nav-missions">
+                    <i class="fa-solid fa-list-check w-5"></i>
+                    <span>Missões</span>
+                </a>
+             
+                <a href="#" onclick="navigateTo('achievements')" class="nav-link flex items-center gap-3 px-4 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800 hover:text-white" id="nav-achievements">
+                    <i class="fa-solid fa-trophy w-5"></i>
+                    <span>Conquistas</span>
+                </a>
+                <a href="#" onclick="navigateTo('stats')" class="nav-link flex items-center gap-3 px-4 py-3 rounded-2xl text-zinc-400 hover:bg-zinc-800 hover:text-white" id="nav-stats">
+                    <i class="fa-solid fa-chart-pie w-5"></i>
+                    <span>Estatísticas</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-zinc-800">
+                <div onclick="toggleFocusMode()" class="flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 cursor-pointer rounded-3xl py-4 text-sm font-medium">
+                    <i class="fa-solid fa-bullseye"></i>
+                    <span>Modo Foco</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <header class="bg-zinc-900 border-b border-zinc-800 px-8 py-5 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <h1 id="page-title" class="title-font text-3xl font-semibold">Dashboard</h1>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                    <div onclick="requestNotifications()" class="cursor-pointer text-zinc-400 hover:text-white">
+                        <i class="fa-solid fa-bell text-xl"></i>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <div class="text-right">
+                            <div id="greeting" class="font-medium">Olá, Produtivo</div>
+                            <div id="current-date" class="text-xs text-zinc-500"></div>
+                        </div>
+                        <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-semibold">P</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="flex-1 overflow-auto p-8" id="main-content">
+                <!-- Dashboard will be loaded here by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Mission Modal -->
+    <div id="mission-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+        <div class="bg-zinc-900 rounded-3xl w-full max-w-md mx-4">
+            <div class="p-8">
+                <h2 id="modal-title" class="text-2xl font-semibold mb-6">Nova Missão</h2>
+                
+                <form id="mission-form">
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm text-zinc-400 mb-1.5">Título</label>
+                            <input id="mission-title" type="text" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500" required>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm text-zinc-400 mb-1.5">Descrição</label>
+                            <textarea id="mission-desc" class="w-full bg-zinc-800 border border-zinc-700 rounded-3xl px-5 py-4 h-28 resize-y focus:outline-none focus:border-blue-500"></textarea>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-zinc-400 mb-1.5">Tipo</label>
+                                <select id="mission-type" onchange="updatePriorityField()" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500">
+                                    <option value="daily">Diária</option>
+                                    <option value="weekly">Semanal</option>
+                                    <option value="monthly">Mensal</option>
+                                </select>
+                            </div>
+                            <div id="priority-container">
+                                <label class="block text-sm text-zinc-400 mb-1.5">Prioridade</label>
+                                <select id="mission-priority" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-500">
+                                    <option value="low">Baixa</option>
+                                    <option value="medium" selected>Média</option>
+                                    <option value="high">Alta</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="border-t border-zinc-800 p-5 flex gap-3">
+                <button onclick="closeModal()" class="flex-1 py-4 bg-zinc-800 hover:bg-zinc-700 rounded-2xl font-medium">Cancelar</button>
+                <button onclick="saveMission()" class="flex-1 py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl font-medium">Salvar Missão</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Focus Mode Modal -->
+    <div id="focus-modal" class="hidden fixed inset-0 bg-zinc-950 flex flex-col z-[100]">
+        <div class="p-6 flex justify-between items-center border-b border-zinc-800">
+            <div class="flex items-center gap-4">
+                <button onclick="exitFocusMode()" class="text-zinc-400 hover:text-white">
+                    <i class="fa-solid fa-arrow-left text-2xl"></i>
+                </button>
+                <h2 class="text-2xl font-semibold" id="focus-mission-title">Missão em Foco</h2>
+            </div>
+            <div class="flex items-center gap-8 text-sm">
+                <div id="focus-timer" class="font-mono text-3xl tabular-nums">00:00</div>
+                <button onclick="completeFocusMission()" class="px-8 py-3 bg-green-600 hover:bg-green-500 rounded-2xl font-medium flex items-center gap-2">
+                    <i class="fa-solid fa-check"></i>
+                    <span>Concluir</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="flex-1 flex items-center justify-center p-8">
+            <div class="max-w-2xl w-full text-center">
+                <div id="focus-description" class="text-zinc-400 text-lg leading-relaxed mb-12"></div>
+                
+                <div class="bg-zinc-900 rounded-3xl p-8 border border-zinc-700">
+                    <div class="text-xs uppercase tracking-widest text-zinc-500 mb-2">Tempo focado</div>
+                    <div id="focus-time" class="text-8xl font-light text-white font-mono tabular-nums">00:00</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-8 text-center text-zinc-500 text-sm">
+            Pressione ESC para sair do Modo Foco
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
